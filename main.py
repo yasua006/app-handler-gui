@@ -2,6 +2,11 @@ from subprocess import run as sprun, CompletedProcess
 import tkinter as tk
 import atexit
 
+from modules.python import handle_finder
+from modules.python.handle_finder import *
+
+msg = ""
+
 
 def execution_permission() -> None:
     sprun(["chmod", "+x", "./main.bash"])
@@ -10,11 +15,27 @@ def execution_permission() -> None:
 def open_app(app_name: str) -> None:
     # print(f"Opening {app_name}...")
 
+    privilege_lvl: str = show_privilege()
+    
+    global msg
+    msg = handle_finder.open_guarded(app_name, privilege_lvl)
+
+    if msg:
+        # print("Message (open):", msg)
+        return
+
     open_option = "1"
     sprun(["./main.bash"], input=f"{open_option}\n{app_name}\n", text=True)
 
 def close_app(app_name: str) -> None:
     # print(f"Closing {app_name}...")
+    
+    global msg
+    msg = handle_finder.close_guarded(app_name)
+
+    if msg:
+        # print("Message (close):", msg)
+        return
 
     close_option = "2"
     sprun(["./main.bash"], input=f"{close_option}\n{app_name}\n", text=True)
@@ -37,10 +58,15 @@ def show_supported_platforms() -> str:
 
     return result.stdout
 
+
 def handle_switch(label: tk.Label) -> None:
     switch_privilege()
     new_privilege_lvl: str = show_privilege()
     label.config(text=f"Privilege: {new_privilege_lvl}")
+
+def handle_msg(messages: tk.Label) -> None:
+    # print("Current message (handle message):", msg)
+    messages.config(text=msg or "No messages")
 
 
 def main() -> None:
@@ -68,12 +94,17 @@ def main() -> None:
     show_privilege_desc = tk.Label(frame, text=f"Privilege: {privilege_lvl}")
     show_privilege_desc.pack(pady=25)
 
+    messages = tk.Label(frame, text=msg or "No messages",
+        foreground="orangered",
+        font=("TkDefaultFont", 16, "italic"))
+    messages.pack(pady=25)
+
     open_app_btn = tk.Button(frame, text="Open",
-        command=lambda: open_app(what_app))
+        command=lambda: [open_app(what_app), handle_msg(messages)])
     open_app_btn.pack()
 
     close_app_btn = tk.Button(frame, text="Close",
-        command=lambda: close_app(what_app))
+        command=lambda: [close_app(what_app), handle_msg(messages)])
     close_app_btn.pack()
 
     switch_privilege_btn = tk.Button(frame, text="Switch privilege",
