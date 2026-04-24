@@ -15,4 +15,4 @@ python3 main.py
 
 
 ## Demo
-![Showing GUI](./app_handler_gui.png)
+![Showing GUI](./images/app_handler_gui.png)
